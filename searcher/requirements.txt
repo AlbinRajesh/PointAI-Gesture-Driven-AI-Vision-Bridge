@@ -1,0 +1,12 @@
+# Core Logic
+mediapipe==0.10.9
+numpy>=1.23.5,<2.0.0
+opencv-contrib-python>=4.8.0.76,<4.10.0
+
+# Desktop & Interaction
+pyautogui==0.9.54
+mss==9.0.1
+pytesseract==0.3.10
+
+# Fixed dependencies to avoid "Version Hell"
+protobuf==3.20.3
