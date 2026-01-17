@@ -19,7 +19,7 @@ MODEL_ID = "gemini-2.5-flash"
 
 current_ai_message = ""
 lock_start_timestamp = None
-ai_is_thinking = False  # Track if the AI is currently busy
+ai_is_thinking = False  
 
 def ask_ai_about_image(filename):
     global current_ai_message, ai_is_thinking
@@ -34,7 +34,7 @@ def ask_ai_about_image(filename):
         current_ai_message = ">>> AI ERROR"
         print(f"AI Error: {e}")
     finally:
-        ai_is_thinking = False # Signal that we are done
+        ai_is_thinking = False 
 
 # --- STEP 2: DPI ACCURACY ---
 try:
@@ -92,6 +92,7 @@ is_locked = False
 last_move_time = time.time()
 fist_start_time = None
 lock_threshold, lock_delay = 20, 3.0
+clear_text_threshold = 50 # Distance to move before text disappears
 
 def reset_lock(keep_ai_text=True):
     global is_locked, lock_start_timestamp, current_ai_message
@@ -123,16 +124,20 @@ try:
         result = hands_detector.process(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
         display_text, current_state, flash_effect, timer_display = "", "moving", False, ""
 
-        # Update Smoothing Coordinates (runs every frame so the box knows where the hand is)
         if result.multi_hand_landmarks:
             hand_lms = result.multi_hand_landmarks[0]
             tx, ty = hand_lms.landmark[4].x * screen_w, hand_lms.landmark[4].y * screen_h
             ix, iy = hand_lms.landmark[8].x * screen_w, hand_lms.landmark[8].y * screen_h
             
-            # --- AUTO UNLOCK LOGIC ---
-            # If we are locked, but the AI is finished thinking, unlock immediately
+            # --- AUTO UNLOCK & CLEAR LOGIC ---
             if is_locked and not ai_is_thinking:
                 reset_lock(keep_ai_text=True)
+
+            # Check for movement to clear old AI text
+            movement_dist = abs(tx - p_t_x) + abs(ty - p_t_y)
+            if not is_locked and not ai_is_thinking and current_ai_message != "":
+                if movement_dist > clear_text_threshold:
+                    current_ai_message = "" # Clear text when moving away
 
             if is_locked:
                 current_state = "locked"
@@ -141,7 +146,6 @@ try:
                     elapsed = time.time() - lock_start_timestamp
                     timer_display = f"{int(elapsed)}s"
             else:
-                # Normal Tracking Mode
                 is_fist = all([hand_lms.landmark[i].y > hand_lms.landmark[i-2].y for i in [8, 12, 16, 20]])
                 if is_fist:
                     fist_start_time = fist_start_time or time.time()
@@ -149,7 +153,7 @@ try:
                     display_text, current_state = "EXITING...", "closing"
                 else:
                     fist_start_time = None 
-                    if abs(tx - p_t_x) + abs(ty - p_t_y) > lock_threshold:
+                    if movement_dist > lock_threshold:
                         last_move_time = time.time()
                     else:
                         if time.time() - last_move_time > lock_delay:
@@ -163,7 +167,6 @@ try:
                         else:
                             display_text = f"LOCKING IN {max(0, int(lock_delay - (time.time() - last_move_time)) + 1)}s"
 
-            # Always update position if we aren't locked
             if not is_locked:
                 p_t_x += (tx - p_t_x) * smooth_factor
                 p_t_y += (ty - p_t_y) * smooth_factor
@@ -180,4 +183,3 @@ finally:
     overlay.close()
     keyboard.unhook_all()
     sys.exit()
-    
