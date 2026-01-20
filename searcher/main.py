@@ -14,7 +14,7 @@ from google import genai
 import PIL.Image
 
 # --- STEP 1: AI CONFIGURATION ---
-client = genai.Client(api_key="AIzaSyBcRTBb3IqkSooLBZQPNJi0mjQDm0DVyhI")
+client = genai.Client(api_key="AIzaSyCBDggOTkQ80y1zGncrgrsFcmDtzD8UED8")
 MODEL_ID = "gemini-2.5-flash"
 
 current_ai_message = ""
@@ -27,7 +27,15 @@ def ask_ai_about_image(filename):
     current_ai_message = ">>> ANALYZING DATA..."
     try:
         img = PIL.Image.open(filename)
-        prompt = "Provide a tactical summary of this image in 10 words or less."
+        # Enhanced Conditional Prompt
+        prompt = """
+        Analyze this image and follow these rules strictly:
+        1. If you see a recognizable person, output ONLY their name.
+        2. If you see computer code, explain what the code does in exactly 2 short lines.
+        3. If you see both, prioritize the person's name.
+        4. If you see neither, give a 3-word tactical status.
+        No conversational filler. Be concise.
+        """
         response = client.models.generate_content(model=MODEL_ID, contents=[prompt, img])
         current_ai_message = f"INTEL: {response.text.strip().upper()}"
     except Exception as e:
@@ -91,7 +99,7 @@ is_running = True
 is_locked = False
 last_move_time = time.time()
 fist_start_time = None
-lock_threshold, lock_delay = 20, 3.0
+lock_threshold, lock_delay = 20, 2.0
 clear_text_threshold = 50 # Distance to move before text disappears
 
 def reset_lock(keep_ai_text=True):
