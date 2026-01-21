@@ -27,14 +27,13 @@ def ask_ai_about_image(filename):
     current_ai_message = ">>> ANALYZING DATA..."
     try:
         img = PIL.Image.open(filename)
-        # Enhanced Conditional Prompt
         prompt = """
         Analyze this image and follow these rules strictly:
-        1. If you see a recognizable person, output ONLY their name.
-        2. If you see computer code, explain what the code does in exactly 2 short lines.
-        3. If you see both, prioritize the person's name.
-        4. If you see neither, give a 3-word tactical status.
-        No conversational filler. Be concise.
+        1. If you see a recognizable person: Identify them and describe their profession or major contribution in two sentence.
+        2. If you see computer code: Explain the purpose and functionality of the code in exactly 4 bulleted lines.
+        3. If you see both: Identify the person first, then summarize the code in 2 lines.
+        4. If you see neither: Provide a 2 sentence tactical status of the visible environment.
+        No conversational filler. Stay objective and concise.
         """
         response = client.models.generate_content(model=MODEL_ID, contents=[prompt, img])
         current_ai_message = f"INTEL: {response.text.strip().upper()}"
@@ -44,7 +43,7 @@ def ask_ai_about_image(filename):
     finally:
         ai_is_thinking = False 
 
-# --- STEP 2: DPI ACCURACY ---
+# --- STEP 2: DPI ACCURACY --- Dots per inch
 try:
     ctypes.windll.shcore.SetProcessDpiAwareness(1)
 except Exception:
@@ -118,10 +117,10 @@ screen_w, screen_h = pyautogui.size()
 video = cv2.VideoCapture(0)
 hands_detector = mp.solutions.hands.Hands(max_num_hands=1, min_detection_confidence=0.8)
 
-p_t_x, p_t_y, p_i_x, p_i_y = 0, 0, 0, 0
+p_t_x, p_t_y, p_i_x, p_i_y = 0, 0, 0, 0 
 smooth_factor = 0.15
 
-print("AR AI Sniper HUD: ACTIVE")
+print("IT IS ACTIVATED")
 
 try:
     while is_running:
@@ -149,7 +148,7 @@ try:
 
             if is_locked:
                 current_state = "locked"
-                display_text = "AI THINKING..."
+                display_text = "AI IS THINKING..."
                 if lock_start_timestamp:
                     elapsed = time.time() - lock_start_timestamp
                     timer_display = f"{int(elapsed)}s"
